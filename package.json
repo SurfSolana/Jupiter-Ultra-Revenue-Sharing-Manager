@@ -1,0 +1,22 @@
+{
+  "name": "jupiter-ultra-enhanced-referral-system",
+  "version": "1.0.0",
+  "description": "A monorepo for the Jupiter Ultra Enhanced Referral System",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "sdk"
+  ],
+  "scripts": {
+    "build": "tsc -b ./sdk ./backend",
+    "test": "jest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "start:backend": "cd backend && npm run start",
+    "start:frontend": "cd frontend && npm run start"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0"
+  }
+}

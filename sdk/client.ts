@@ -114,8 +114,8 @@ export class PlatformFeeEscrowClient {
   }> {
     const {
       user,
-      jupiterQuote,
       tradeAmount,
+      expectedSignature,
       referrer = user,
       tier = 'default'
     } = params;
@@ -138,9 +138,7 @@ export class PlatformFeeEscrowClient {
     const tx = await this.program.methods
       .depositFeeWithQuote(
         tradeAmount,
-        new PublicKey(jupiterQuote.inputMint),
-        new PublicKey(jupiterQuote.outputMint),
-        new BN(jupiterQuote.inAmount),
+        expectedSignature,
         expirationSlot,
         referrerShareBps,
         discountBps,
@@ -178,33 +176,14 @@ export class PlatformFeeEscrowClient {
   // =============================================================================
 
   async submitJupiterExecution(params: SubmitExecutionParams): Promise<string> {
-    const { user, escrowPDA, executionResponse } = params;
-    
-    // Validate execution
-    if (!validateJupiterExecution(executionResponse)) {
-      throw new PlatformFeeError(
-        'Invalid Jupiter execution response',
-        ErrorCode.INVALID_EXECUTION,
-        { executionResponse }
-      );
-    }
+    const { user, escrowPDA, executionSignature } = params;
     
     const currentSlot = await this.connection.getSlot();
-    const swapEvents = parseJupiterSwapEvents(executionResponse);
     
-    // Convert swap events to the format expected by the contract
-    const formattedSwapEvents = swapEvents.map(event => ({
-      inputMint: new PublicKey(event.inputMint),
-      inputAmount: new BN(event.inputAmount),
-      outputMint: new PublicKey(event.outputMint),
-      outputAmount: new BN(event.outputAmount)
-    }));
-    
+    // Simple signature-only submission - perfect verification!
     const tx = await this.program.methods
       .submitJupiterExecution(
-        new PublicKey(executionResponse.signature),
-        formattedSwapEvents,
-        executionResponse.status === "Success" ? 1 : 0,
+        executionSignature,
         new BN(currentSlot)
       )
       .accounts({

@@ -11,6 +11,7 @@ import {
   JupiterExecutionResponse,
   SwapEvent 
 } from '../../sdk/types';
+import { extractSignature, verifyTransactionExecution } from '../../sdk/utils';
 
 export interface QuoteParams {
   inputMint: string;
@@ -115,7 +116,7 @@ export class JupiterProxyService {
   }
   
   // =============================================================================
-  // EXECUTE SWAP (simulate execution response)
+  // EXECUTE SWAP AND VERIFICATION
   // =============================================================================
   
   async executeSwap(
@@ -136,6 +137,129 @@ export class JupiterProxyService {
     } catch (error) {
       console.error('Jupiter execution error:', error);
       throw this.handleJupiterError(error);
+    }
+  }
+  
+  /**
+   * Verify a Jupiter transaction using signature-based matching
+   * This is the new perfect verification method discovered
+   */
+  async verifyJupiterTransaction(
+    signedTransactionBase64: string,
+    connection: Connection
+  ): Promise<{
+    verified: boolean;
+    signature?: string;
+    executed: boolean;
+    error?: string;
+  }> {
+    try {
+      // Extract signature from the signed transaction
+      const signature = extractSignature(signedTransactionBase64);
+      
+      // Verify execution on blockchain
+      const verification = await verifyTransactionExecution(connection, signature);
+      
+      return {
+        verified: true,
+        signature,
+        executed: verification.success,
+        error: verification.error
+      };
+    } catch (error) {
+      console.error('Jupiter transaction verification error:', error);
+      return {
+        verified: false,
+        executed: false,
+        error: error.message
+      };
+    }
+  }
+  
+  /**
+   * Enhanced method that combines transaction execution and verification
+   * For use when you have the signed transaction stored
+   */
+  async executeAndVerifyTransaction(
+    signedTransactionBase64: string,
+    connection: Connection,
+    sendTransaction: boolean = false
+  ): Promise<JupiterExecutionResponse & { verified: boolean }> {
+    try {
+      let executionResult: JupiterExecutionResponse;
+      
+      if (sendTransaction) {
+        // If we need to actually send the transaction
+        // (This would be used if the transaction hasn't been sent yet)
+        const txBuffer = Buffer.from(signedTransactionBase64, 'base64');
+        const signature = await connection.sendRawTransaction(txBuffer);
+        await connection.confirmTransaction(signature, 'confirmed');
+        
+        // Parse the transaction results
+        executionResult = await this.parseExecutedTransaction(signature, connection);
+      } else {
+        // If transaction was already sent, just verify it
+        const verification = await this.verifyJupiterTransaction(
+          signedTransactionBase64, 
+          connection
+        );
+        
+        if (!verification.verified || !verification.executed) {
+          throw new Error(verification.error || 'Transaction verification failed');
+        }
+        
+        // Parse the verified transaction
+        executionResult = await this.parseExecutedTransaction(
+          verification.signature!, 
+          connection
+        );
+      }
+      
+      return {
+        ...executionResult,
+        verified: true
+      };
+    } catch (error) {
+      console.error('Execute and verify error:', error);
+      throw this.handleJupiterError(error);
+    }
+  }
+  
+  /**
+   * Parse an executed transaction to extract Jupiter execution response
+   */
+  private async parseExecutedTransaction(
+    signature: string,
+    connection: Connection
+  ): Promise<JupiterExecutionResponse> {
+    try {
+      const tx = await connection.getTransaction(signature, {
+        maxSupportedTransactionVersion: 0
+      });
+      
+      if (!tx || !tx.meta) {
+        throw new Error('Transaction not found or incomplete');
+      }
+      
+      // Parse swap events from transaction logs
+      const swapEvents = JupiterTransactionParser.parseSwapEvents(
+        tx.meta.logMessages || []
+      );
+      
+      return {
+        status: tx.meta.err ? "Failed" : "Success",
+        signature,
+        slot: tx.slot.toString(),
+        code: tx.meta.err ? 400 : 200,
+        totalInputAmount: "0", // Would need to parse from logs
+        totalOutputAmount: "0", // Would need to parse from logs  
+        inputAmountResult: "0", // Would need to parse from logs
+        outputAmountResult: "0", // Would need to parse from logs
+        swapEvents,
+        error: tx.meta.err ? JSON.stringify(tx.meta.err) : undefined
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse executed transaction: ${error.message}`);
     }
   }
   

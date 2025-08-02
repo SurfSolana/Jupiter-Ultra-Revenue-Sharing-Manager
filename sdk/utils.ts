@@ -2,8 +2,9 @@
  * Utility functions for Platform Fee Escrow SDK
  */
 
-import { PublicKey, Connection } from '@solana/web3.js';
+import { PublicKey, Connection, VersionedTransaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import bs58 from 'bs58';
 import { 
   FEE_TIERS, 
   PartnerStatus, 
@@ -131,6 +132,102 @@ export function generateEscrowSeed(): BN {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000000);
   return new BN(timestamp * 1000000 + random);
+}
+
+// =============================================================================
+// SIGNATURE EXTRACTION UTILITIES
+// =============================================================================
+
+/**
+ * Extracts the signature from a base64-encoded signed transaction
+ * @param signedTransactionBase64 Base64-encoded signed transaction
+ * @returns Transaction signature as base58 string
+ */
+export function extractSignature(signedTransactionBase64: string): string {
+  try {
+    const txBuffer = Buffer.from(signedTransactionBase64, 'base64');
+    const transaction = VersionedTransaction.deserialize(txBuffer);
+    
+    if (!transaction.signatures || transaction.signatures.length === 0) {
+      throw new Error('No signatures found in transaction');
+    }
+    
+    return bs58.encode(transaction.signatures[0]);
+  } catch (error) {
+    throw new Error(`Failed to extract signature: ${error.message}`);
+  }
+}
+
+/**
+ * Verifies if a transaction was executed successfully on-chain
+ * @param connection Solana connection
+ * @param signature Transaction signature
+ * @returns Promise<{success: boolean, error?: string}>
+ */
+export async function verifyTransactionExecution(
+  connection: Connection,
+  signature: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const txDetails = await connection.getTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+      commitment: 'finalized'
+    });
+    
+    if (!txDetails) {
+      return { success: false, error: 'Transaction not found on blockchain' };
+    }
+    
+    if (txDetails.meta?.err) {
+      return { 
+        success: false, 
+        error: `Transaction failed: ${JSON.stringify(txDetails.meta.err)}` 
+      };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: `Error verifying transaction: ${error.message}` 
+    };
+  }
+}
+
+/**
+ * Matches stored signed transaction with executed transaction on-chain
+ * @param connection Solana connection
+ * @param signedTransactionBase64 Base64-encoded signed transaction
+ * @returns Promise<{matched: boolean, signature?: string, executed?: boolean, error?: string}>
+ */
+export async function matchSignedTransaction(
+  connection: Connection,
+  signedTransactionBase64: string
+): Promise<{
+  matched: boolean;
+  signature?: string;
+  executed?: boolean;
+  error?: string;
+}> {
+  try {
+    // Extract signature from signed transaction
+    const signature = extractSignature(signedTransactionBase64);
+    
+    // Verify execution on-chain
+    const verification = await verifyTransactionExecution(connection, signature);
+    
+    return {
+      matched: true,
+      signature,
+      executed: verification.success,
+      error: verification.error
+    };
+  } catch (error) {
+    return {
+      matched: false,
+      error: error.message
+    };
+  }
 }
 
 // =============================================================================
@@ -286,6 +383,11 @@ export const utils = {
   slotToTimestamp,
   isValidPublicKey,
   validateFeeEscrowState,
+  
+  // Signature verification
+  extractSignature,
+  verifyTransactionExecution,
+  matchSignedTransaction,
   
   // Async utilities
   confirmTransaction,

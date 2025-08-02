@@ -16,6 +16,7 @@ import { config } from './config';
 import { JupiterProxyService } from './services/jupiter-proxy';
 import { FeeClaimService } from './services/fee-claim-service';
 import { AnalyticsService } from './services/analytics-service';
+import { TransactionVerificationService } from './services/transaction-verification-service';
 
 // =============================================================================
 // SETUP
@@ -36,6 +37,7 @@ let client: PlatformFeeEscrowClient;
 let jupiterProxy: JupiterProxyService;
 let feeClaimService: FeeClaimService;
 let analyticsService: AnalyticsService;
+let verificationService: TransactionVerificationService;
 
 // =============================================================================
 // HEALTH CHECK
@@ -56,7 +58,8 @@ app.get('/health', async (req, res) => {
           platformBalance: balance / 1e9
         },
         jupiter: jupiterProxy?.isHealthy() || false,
-        feeClaimService: feeClaimService?.isRunning() || false
+        feeClaimService: feeClaimService?.isRunning() || false,
+        verificationService: verificationService?.getMetrics().status === 'running' || false
       },
       platform: {
         wallet: platformKeypair.publicKey.toString(),
@@ -116,6 +119,147 @@ app.post('/api/jupiter/execute', async (req, res) => {
     console.error('Jupiter execution error:', error);
     res.status(500).json({ 
       error: 'Failed to execute swap',
+      details: error.message 
+    });
+  }
+});
+
+// Verify Jupiter transaction using signature-based matching
+app.post('/api/jupiter/verify', async (req, res) => {
+  try {
+    const { signedTransactionBase64 } = req.body;
+    
+    if (!signedTransactionBase64) {
+      return res.status(400).json({ 
+        error: 'Missing signedTransactionBase64 parameter' 
+      });
+    }
+    
+    const verification = await jupiterProxy.verifyJupiterTransaction(
+      signedTransactionBase64,
+      connection
+    );
+    
+    res.json(verification);
+  } catch (error) {
+    console.error('Jupiter verification error:', error);
+    res.status(500).json({ 
+      error: 'Failed to verify Jupiter transaction',
+      details: error.message 
+    });
+  }
+});
+
+// Execute and verify Jupiter transaction
+app.post('/api/jupiter/execute-and-verify', async (req, res) => {
+  try {
+    const { signedTransactionBase64, sendTransaction = false } = req.body;
+    
+    if (!signedTransactionBase64) {
+      return res.status(400).json({ 
+        error: 'Missing signedTransactionBase64 parameter' 
+      });
+    }
+    
+    const result = await jupiterProxy.executeAndVerifyTransaction(
+      signedTransactionBase64,
+      connection,
+      sendTransaction
+    );
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Jupiter execute and verify error:', error);
+    res.status(500).json({ 
+      error: 'Failed to execute and verify transaction',
+      details: error.message 
+    });
+  }
+});
+
+// =============================================================================
+// TRANSACTION VERIFICATION ENDPOINTS
+// =============================================================================
+
+// Queue transaction for verification
+app.post('/api/verification/queue', async (req, res) => {
+  try {
+    const { recordId } = req.body;
+    
+    if (!recordId) {
+      return res.status(400).json({ 
+        error: 'Missing recordId parameter' 
+      });
+    }
+    
+    await verificationService.queueForVerification(recordId);
+    
+    res.json({ 
+      success: true,
+      message: `Transaction ${recordId} queued for verification` 
+    });
+  } catch (error) {
+    console.error('Queue verification error:', error);
+    res.status(500).json({ 
+      error: 'Failed to queue transaction for verification',
+      details: error.message 
+    });
+  }
+});
+
+// Get verification service status
+app.get('/api/verification/status', async (req, res) => {
+  try {
+    const status = verificationService.getQueueStatus();
+    const metrics = verificationService.getMetrics();
+    
+    res.json({
+      ...status,
+      ...metrics
+    });
+  } catch (error) {
+    console.error('Verification status error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get verification status',
+      details: error.message 
+    });
+  }
+});
+
+// Get recent verification results
+app.get('/api/verification/recent', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 20;
+    const recentVerifications = verificationService.getRecentVerifications(limit);
+    
+    res.json(recentVerifications);
+  } catch (error) {
+    console.error('Recent verifications error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get recent verifications',
+      details: error.message 
+    });
+  }
+});
+
+// Verify transaction by signature
+app.post('/api/verification/by-signature', async (req, res) => {
+  try {
+    const { signature } = req.body;
+    
+    if (!signature) {
+      return res.status(400).json({ 
+        error: 'Missing signature parameter' 
+      });
+    }
+    
+    const verification = await verificationService.verifyBySignature(signature);
+    
+    res.json(verification);
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    res.status(500).json({ 
+      error: 'Failed to verify transaction by signature',
       details: error.message 
     });
   }
@@ -391,6 +535,7 @@ async function initializeServices() {
     
     // Initialize services
     jupiterProxy = new JupiterProxyService(config.JUPITER_API_URL);
+    verificationService = new TransactionVerificationService(connection);
     // feeClaimService = new FeeClaimService(client, platformKeypair, connection);
     // analyticsService = new AnalyticsService(client, connection);
     
@@ -401,6 +546,7 @@ async function initializeServices() {
     // }
     
     // Start automated services
+    await verificationService.start();
     // await feeClaimService.start();
     
     console.log('✅ All services initialized successfully');
@@ -437,6 +583,10 @@ async function startServer() {
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down gracefully...');
   
+  if (verificationService) {
+    await verificationService.stop();
+  }
+  
   if (feeClaimService) {
     await feeClaimService.stop();
   }
@@ -446,6 +596,10 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
   console.log('\n🛑 SIGTERM received, shutting down...');
+  
+  if (verificationService) {
+    await verificationService.stop();
+  }
   
   if (feeClaimService) {
     await feeClaimService.stop();

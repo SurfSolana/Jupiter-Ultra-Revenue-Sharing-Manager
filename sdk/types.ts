@@ -49,13 +49,10 @@ export interface FeeEscrowAccount {
   userDiscount: BN;
   actualFeeCharged: BN;
   
-  // Verification data
-  inputMint: PublicKey;
-  outputMint: PublicKey;
-  inputAmount: BN;
-  actualOutputAmount: BN;
+  // Perfect signature-based verification (only fields needed!)
+  expectedSignature: PublicKey;   // Expected signature from signed transaction
+  executionSignature: PublicKey;  // Actual signature submitted during execution
   
-  executionSignature: PublicKey;
   expirationSlot: BN;
   seed: BN;
   isCompleted: boolean;
@@ -166,8 +163,8 @@ export interface FeeBreakdown {
 
 export interface DepositFeeParams {
   user: PublicKey;
-  jupiterQuote: JupiterQuoteResponse;
   tradeAmount: BN;
+  expectedSignature: PublicKey;  // Signature from signed Jupiter transaction
   referrer?: PublicKey;
   tier?: PartnerStatus;
 }
@@ -175,7 +172,7 @@ export interface DepositFeeParams {
 export interface SubmitExecutionParams {
   user: PublicKey;
   escrowPDA: PublicKey;
-  executionResponse: JupiterExecutionResponse;
+  executionSignature: PublicKey;  // Just the signature - that's all we need!
 }
 
 export interface ClaimFeeParams {

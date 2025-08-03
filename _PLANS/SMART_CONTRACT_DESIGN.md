@@ -81,7 +81,7 @@ struct PlatformOwner {
 ```typescript
 interface GlobalTreasury extends Account {
     admin: Pubkey,                      // Can add users/partners (not change owner %)
-    lst_token_account: Pubkey,          // jitoSOL token account
+    crt_token_account: Pubkey,          // CRT token account
     sol_usd_price_feed: Pubkey,         // Pyth SOL/USD price feed
 }
 ```
@@ -95,7 +95,7 @@ interface GlobalTreasury extends Account {
 #### `initialize(admin: Signer, initial_owner: Pubkey)`
 - Create GlobalTreasury, PartnerRegistry, UserRegistry, and PlatformOwners accounts
 - **Start with single owner** (100% ownership, multisig_mode = false)
-- Set up LST token vault (jitoSOL)
+- Set up CRT token vault (Carrot yield-bearing token)
 - Initialize price oracle connection
 - Set admin permissions (admin can manage users/partners)
 
@@ -135,7 +135,7 @@ interface GlobalTreasury extends Account {
 3. **Get SOL/USD price** from Pyth oracle
 4. **Calculate fees** based on partner tier (matches your fee structure)
 5. **Transfer SOL** from user to treasury
-6. **Convert SOL → jitoSOL** immediately via Jupiter CPI
+6. **Convert SOL → CRT** directly via Jupiter CPI
 7. **Create FeeTransaction** escrow account
 8. **Update partner total_usd_owed**
 9. **Distribute platform share** among platform owners based on their percentages
@@ -191,17 +191,17 @@ for owner in platform_owners {
 #### `claim_partner_earnings(partner: Signer, amount_usd: u64)`
 **Process**:
 1. **Verify partner** has sufficient USD owed
-2. **Calculate LST needed** for exact USD amount (using current LST/USD price)
-3. **Convert jitoSOL → USDC** via Jupiter CPI  
+2. **Calculate CRT needed** for exact USD amount (using current CRT/USD price)
+3. **Convert CRT → USDC** via Jupiter CPI  
 4. **Transfer USDC** to partner's USDC token account
 5. **Update partner stats** (reduce owed)
 
 #### `claim_platform_owner_earnings(owner: Signer, amount_usd: u64)`
 **Process**:
 1. **Verify owner** has sufficient USD owed
-2. **Calculate LST needed** for exact USD amount
-3. **Transfer LST directly** to owner's LST token account (NO CONVERSION!)
-4. **Owner keeps LST** earning yield forever
+2. **Calculate CRT needed** for exact USD amount
+3. **Transfer CRT directly** to owner's CRT token account (NO CONVERSION!)
+4. **Owner keeps CRT** optimizing yield forever
 5. **Update owner stats** (reduce owed)
 
 ### **4. View Functions**
@@ -224,18 +224,18 @@ for owner in platform_owners {
 
 ### **Jupiter CPI (Cross-Program Invocation)**
 ```typescript
-// SOL → jitoSOL conversion (immediate yield generation)
+// SOL → CRT conversion (immediate yield generation)
 jupiter_cpi::swap(
     sol_amount,
     SOL_MINT,
-    JITOSOL_MINT,
-    treasury.lst_token_account
+    CRT_MINT,
+    treasury.crt_token_account
 );
 
-// jitoSOL → USDC conversion (exact amount for payouts)
+// CRT → USDC conversion (exact amount for payouts)
 jupiter_cpi::swap(
-    lst_amount_needed,
-    JITOSOL_MINT, 
+    crt_amount_needed,
+    CRT_MINT, 
     USDC_MINT,
     user_usdc_account
 );
@@ -318,7 +318,7 @@ let sol_usd_price = sol_price_account.get_current_price().unwrap();
    - Owner B owed: $1.8 (30% of $6)
    - Owner C owed: $1.2 (20% of $6)
 8. User pays 9/120 = 0.075 SOL (if SOL = $120)
-9. 0.075 SOL → jitoSOL immediately (earning 6% APY)
+9. 0.075 SOL → CRT directly (earning optimized DeFi yield)
 ```
 
 ### **Claiming Examples**
@@ -327,18 +327,18 @@ let sol_usd_price = sol_price_account.get_current_price().unwrap();
 ```
 1. Partner has $100 USD accumulated
 2. Calls claim_partner_earnings($100)
-3. Calculate: Need X jitoSOL worth $100 at current rate
-4. Convert: X jitoSOL → $100 USDC via Jupiter
+3. Calculate: Need X CRT worth $100 at current rate
+4. Convert: X CRT → $100 USDC via Jupiter
 5. Transfer: $100 USDC to partner's wallet
 ```
 
-**Platform Owner Claiming (gets LST):**
+**Platform Owner Claiming (gets CRT):**
 ```
 1. Owner A has $500 USD accumulated
 2. Calls claim_platform_owner_earnings($500)
-3. Calculate: Need Y jitoSOL worth $500 at current rate
-4. Transfer: Y jitoSOL directly to Owner A's wallet
-5. Owner A keeps jitoSOL earning 6% APY forever!
+3. Calculate: Need Y CRT worth $500 at current rate
+4. Transfer: Y CRT directly to Owner A's wallet
+5. Owner A keeps CRT optimizing yield across all Solana DeFi!
 ```
 
 **Multisig Governance (changing owner percentages):**

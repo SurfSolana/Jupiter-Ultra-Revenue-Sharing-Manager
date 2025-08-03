@@ -4,7 +4,11 @@
 
 ## 🏆 Overview
 
-JURSM (Jupiter Ultra Revenue Sharing Manager) is an on-chain escrow and verification system specifically built for Jupiter Ultra API transactions. Jupiter Ultra is Jupiter's hosted swap API service that handles RPC calls for you, and JURSM provides a trustless way to verify these transactions and distribute referral commissions. While the signature verification system can work with any Solana transaction, JURSM was purpose-built to solve Jupiter Ultra's fee sharing and verification challenges.
+JURSM (Jupiter Ultra Revenue Sharing Manager) is an on-chain escrow and verification system specifically built for Jupiter Ultra API transactions. 
+
+Jupiter Ultra is Jupiter's hosted swap API service that handles RPC calls for you, and JURSM provides a trustless way to verify these transactions and distribute referral commissions. 
+
+While the signature verification system can work with any Solana transaction, JURSM was purpose-built to solve Jupiter Ultra's fee sharing and verification challenges.
 
 ### 🌟 Why "Jupiter Ultra Revenue Sharing Manager"?
 - **Jupiter Ultra**: Built specifically for Jupiter's Ultra API service
@@ -13,12 +17,34 @@ JURSM (Jupiter Ultra Revenue Sharing Manager) is an on-chain escrow and verifica
 
 ### ⚡ Core Benefits
 - **Universal Verification**: Works with any Solana transaction, not just Jupiter
-- **100% Yield Generation**: All fees immediately converted to CRT (Carrot yield-bearing token)
-- **Perfect Security**: Cryptographically unique transaction signatures  
-- **Stable Payouts**: Partners get USDC, platform owners get CRT
-- **USDC-Pegged Yield**: CRT appreciates against USDC through optimized DeFi yield
+- **Dual Mode Flexibility**: Choose USDC/CRT or SOL/LST accounting at initialization
+- **100% Yield Generation**: All fees immediately converted to yield-bearing tokens
+- **Perfect Security**: Cryptographically unique transaction signatures
+- **No Currency Risk Option**: Mode 2 eliminates SOL/USD liability
 - **Smart Governance**: Single owner start → multisig when needed
 - **Zero Complexity**: Simple fee tiers, minimal accounts
+
+---
+
+## 🔄 Two Revenue Maximization Modes
+
+### **Mode 1: USDC Payouts**
+```
+SOL fees → Carrot → Withdrawal as exact USDC amount
+```
+- **Platform keeps**: ALL Carrot yield above USDC obligations
+- **Partners get**: Exact USDC amounts (stable, predictable)
+- **Best for**: Partners who want USD stability
+
+### **Mode 2: SOL Payouts**
+```
+SOL fees → LST (JitoSOL) → Withdrawal as exact SOL amount
+```
+- **Platform keeps**: ALL LST staking yield above SOL obligations
+- **Partners get**: Exact SOL amounts (crypto native)
+- **Best for**: Partners comfortable with SOL
+
+**Platform always wins**: Collect yield on 100% of funds, pay exact amounts, keep the difference!
 
 ---
 
@@ -35,7 +61,9 @@ JURSM (Jupiter Ultra Revenue Sharing Manager) is an on-chain escrow and verifica
 - **Perfect Audit Trail**: Mathematical proof that the exact transaction was executed
 
 **The Jupiter Ultra challenge**: 
-When using Jupiter Ultra API, your application doesn't directly control the transaction execution - Jupiter's infrastructure does. This creates a trust problem: how do you verify that Jupiter actually executed the trade as requested? JURSM solves this by requiring users to submit the actual transaction signature after Jupiter executes it, providing cryptographic proof.
+When using Jupiter Ultra API, your application doesn't directly control the transaction execution - Jupiter's infrastructure does. 
+
+This creates a trust problem: how do you verify that Jupiter actually executed the trade as requested? JURSM solves this by requiring users to submit the actual transaction signature after Jupiter executes it, providing cryptographic proof.
 
 **Technical reasoning**: 
 Solana transactions are signed with ed25519 cryptography. Each signature is unique to that specific transaction data. By requiring users to submit the actual transaction signature from Jupiter's execution, we have mathematical proof that the transaction occurred exactly as specified, without needing to trust Jupiter or any intermediary.
@@ -70,70 +98,61 @@ With JURSM Escrow: User pays fee → Fee locked in escrow → User submits signa
 - **Automatic Enforcement**: No human intervention needed for verification
 - **Dispute Resolution**: Clear on-chain record of all payments and proofs
 
-### 💰 **Feature 3: USD Value Tracking**
+### 💰 **Feature 3: Exact Amount Tracking**
 
-**What it does**: Tracks all obligations in USD amounts while fees are collected in SOL
+**Both modes track exact amounts owed while maximizing yield**:
 
-**Why this solves everything**:
-- **Eliminates Price Volatility Risk**: SOL price can fluctuate, but USD obligations remain stable
-- **Stable Partner Payouts**: Partners always get exactly what they earned in USD terms
-- **Predictable Business Model**: Platform knows exact USD revenue regardless of SOL price
-- **Fair Distribution**: Revenue sharing based on stable USD values, not volatile token amounts
+**Mode 1**: Track USDC amounts owed
+- User pays SOL → Convert to Carrot → Track USD value
+- Partner withdrawal: Exact USDC amount
+- Platform profit: Carrot yield - USDC paid
 
-**Example scenario**:
+**Mode 2**: Track SOL amounts owed
+- User pays SOL → Convert to LST → Track SOL amount
+- Partner withdrawal: Exact SOL amount
+- Platform profit: LST yield - SOL paid
+
+**Example**:
 ```
-Day 1: User pays 1 SOL fee (SOL = $100) → Platform owes partner $10 USD
-Day 30: SOL = $150 → Partner still gets exactly $10 USD worth (0.067 SOL)
-Result: No volatility risk passed to partners, fair and predictable payouts
-```
-
-### 🚀 **Feature 4: Automated CRT Yield Generation**
-
-**What it does**: Converts 100% of collected fees to CRT (Carrot) tokens for optimized yield generation
-
-**Why CRT is perfect for revenue maximization**:
-- **No Idle Capital**: Every dollar starts earning optimized DeFi yield immediately
-- **Multi-Protocol Optimization**: CRT automatically finds best yields across Solana DeFi
-- **USDC-Pegged Safety**: CRT is backed by USDC/USDT/PYUSD stablecoins
-- **Algorithmic Management**: Rebalances every minute for optimal returns
-- **Tax Efficient**: Yield accumulates as token appreciation (capital gains treatment)
-
-**CRT advantages over traditional LST**:
-- **Diversified Risk**: Spread across multiple DeFi protocols, not just staking
-- **Higher Yield Potential**: Actively seeks peak rates across all Solana yield venues
-- **Stable Backing**: Backed by stablecoins, not volatile SOL
-- **Professional Management**: Algorithmic optimization vs. static staking rewards
-
-**Revenue amplification with CRT**:
-```
-Traditional Model: Collect $1000 fees → Hold in treasury → $1000 total
-JURSM + CRT Model: Collect $1000 fees → Convert to CRT → Dynamic yield optimization
-- CRT finds best yields automatically
-- Yield compounds on itself over time  
-- Platform keeps ALL yield on partner portions
-- Result: Superior returns with algorithmic optimization
+Mode 1: Collect 1 SOL → Convert to $100 worth of CRT → CRT grows to $106 → Pay $100 USDC → Keep $6
+Mode 2: Collect 1 SOL → Convert to 1 jitoSOL → jitoSOL grows to 1.06 SOL value → Pay 1 SOL → Keep 0.06 SOL
 ```
 
-**Learn more**: [Carrot Documentation](https://docs.deficarrot.com/) | [CRT Token Details](https://docs.deficarrot.com/the-token)
+### 🚀 **Feature 4: Automated Yield Generation**
 
-### 🏦 **Feature 5: Dual Payout System**
+**The key to platform profitability: Generate yield on 100% of funds**
 
-**What it does**: Partners get USDC (stable), Platform owners get CRT (yield-generating)
+**Mode 1: Carrot (CRT)**
+- Optimized DeFi yield across Solana protocols
+- Platform keeps ALL yield above USDC obligations
+- Higher potential returns through active management
 
-**Why different payout types**:
+**Mode 2: JitoSOL (LST)**
+- Traditional staking yield (~6% APY)
+- Platform keeps ALL yield above SOL obligations
+- Simple, predictable returns
 
-**Partners get USDC**:
-- **Familiar & Stable**: USDC is widely accepted and stable
-- **Business Operations**: Partners can immediately use USDC for expenses
-- **No Crypto Knowledge Required**: Partners don't need to understand DeFi yield
-- **Tax Simplicity**: Clear USD value for accounting
+**Revenue example (1000 SOL collected)**:
+```
+Mode 1: 1000 SOL → CRT → 8% yield → Pay exact USDC → Platform keeps ~$8,000/year
+Mode 2: 1000 SOL → jitoSOL → 6% yield → Pay exact SOL → Platform keeps ~60 SOL/year
+```
 
-**Platform owners get CRT**:
-- **Maximizes Long-term Value**: CRT continues optimizing yield after payout
-- **Professional Management**: Algorithmic yield optimization across all Solana DeFi
-- **Compound Wealth Building**: Yield-on-yield with automated rebalancing
-- **Strategic Holdings**: Benefits from entire Solana DeFi ecosystem growth
-- **Tax Efficient**: Appreciation treated as capital gains, not income
+### 🏦 **Feature 5: Smart Payout System**
+
+**Partners always get exact amounts**:
+- Mode 1: Exact USDC payouts
+- Mode 2: Exact SOL payouts
+
+**Platform owners get yield-bearing tokens**:
+- Mode 1: Keep CRT (continues earning DeFi yield)
+- Mode 2: Keep jitoSOL (continues earning staking yield)
+
+**Why this maximizes platform revenue**:
+1. Collect 100% of fees as yield-bearing tokens
+2. Pay partners/users exact amounts they're owed
+3. Platform keeps ALL excess yield forever
+4. Owners' tokens continue appreciating after payout
 
 ### 🛡️ **Feature 6: Smart Governance Evolution**
 
@@ -183,27 +202,29 @@ JURSM + CRT Model: Collect $1000 fees → Convert to CRT → Dynamic yield optim
 
 ---
 
-## 🔄 How The Complete System Works
+## 🔄 How Platform Revenue Maximization Works
 
-### **1. Fee Collection**
+### **Both Modes Follow Same Pattern**
 ```
-User trades $1000 → Pays fee in SOL → SOL converts directly to CRT
-```
-
-### **2. Yield Generation** 
-```
-CRT automatically optimizes yield across Solana DeFi (algorithmic rebalancing)
-```
-
-### **3. Verification**
-```
-User submits Jupiter transaction signature → Smart contract verifies → Unlocks payouts
+1. Collect SOL fees
+2. Immediately convert to yield-bearing token (CRT or LST)
+3. Track exact amounts owed
+4. Pay exact amounts on withdrawal
+5. Platform keeps ALL excess yield
 ```
 
-### **4. Payouts**
+### **Mode 1 Example (USDC Payouts)**
 ```
-Partners: CRT → USDC (stable withdrawals)
-Platform Owners: Direct CRT (keeps optimizing yield!)
+Day 1: Collect 1 SOL fee ($100) → Convert to CRT
+Day 30: CRT worth $108 (8% APY) → Partner claims → Pay $100 USDC
+Platform profit: $8 (keeps growing if unclaimed)
+```
+
+### **Mode 2 Example (SOL Payouts)**
+```
+Day 1: Collect 1 SOL fee → Convert to 1 jitoSOL
+Day 365: 1 jitoSOL = 1.06 SOL → Partner claims → Pay 1 SOL
+Platform profit: 0.06 SOL (keeps growing if unclaimed)
 ```
 
 ---
@@ -356,25 +377,39 @@ Single Owner (Launch) → Add Second Owner → Multisig Mode (Forever)
 
 ---
 
-## 💎 Yield Strategy
+## 💎 Platform Revenue Strategy
 
-### **Maximum Yield Capture**
-- **100% of fees** → CRT immediately
-- **Optimized yield** across all Solana DeFi protocols
-- **Partners get USDC** (familiar, stable)
-- **Platform gets CRT** (keeps optimizing yield)
-
-### **Platform Profit Sources**
-1. **Base Revenue**: 60-80% of all fees (after partner shares)
-2. **CRT Yield**: Optimized DeFi returns on ALL funds (including partner portions)
-3. **Yield Accumulation**: Platform CRT keeps growing with algorithmic optimization
-
-### **Example: $1M Monthly Volume**
+### **Core Principle: Keep ALL Yield**
 ```
-Monthly fees: $10,000
-Platform revenue: ~$7,000 (70% average)
-CRT yield: Optimized returns across all Solana DeFi (variable, often > 6% APY)
-Total platform benefit: Revenue + Optimized CRT yield on all funds
+Collect fees → Generate yield on 100% → Pay exact amounts → Keep difference
+```
+
+### **Revenue Sources**
+1. **Base Fees**: 60-80% of all fees (after partner shares)
+2. **Yield Differential**: Keep ALL appreciation above obligations
+3. **Time Value**: Longer funds stay, more yield accumulated
+
+### **Mode Comparison**
+
+**Mode 1 (Carrot/USDC)**:
+- Higher yield potential (DeFi optimization)
+- Stable USDC obligations
+- Platform keeps Carrot appreciation
+
+**Mode 2 (JitoSOL/SOL)**:
+- Predictable staking yield (~6% APY)
+- SOL obligations match SOL holdings
+- Platform keeps jitoSOL appreciation
+
+### **$10M Annual Volume Example**
+```
+Fees collected: $100,000 (1%)
+Platform share: $70,000 (after partners)
+
+Mode 1: $70,000 in CRT @ 8% APY = $5,600 extra/year
+Mode 2: 700 SOL in jitoSOL @ 6% APY = 42 SOL extra/year
+
+Platform keeps growing yield even after payouts!
 ```
 
 ---
@@ -441,24 +476,28 @@ authorize_user(admin, new_user_wallet) // Admin can do this alone
 
 ## 🛠️ Technical Integration
 
-### **External Dependencies**
-- **Jupiter CPI**: SOL ↔ CRT swaps (direct conversion)
-- **Carrot Protocol**: CRT token integration for yield optimization  
-- **Pyth Oracle**: Real-time SOL/USD pricing (for USD accounting)
-- **Solana Token Program**: Token transfers
+### **Mode-Specific Dependencies**
 
-### **Deployment Requirements**
+**Mode 1 (USDC/CRT)**:
+- **Jupiter CPI**: SOL → CRT → USDC swaps
+- **Carrot Protocol**: CRT token yield optimization
+- **Pyth Oracle**: Real-time SOL/USD pricing
+- **CRT Mint**: `CRTx1JouZhzSU6XytsE42UQraoGqiHgxabocVfARTy2s`
+
+**Mode 2 (SOL/LST)**:
+- **Jupiter CPI**: SOL ↔ LST swaps
+- **LST Protocol**: jitoSOL or similar LST
+- **No Oracle Needed**: Pure SOL accounting
+- **LST Mint**: Depends on chosen LST
+
+### **Common Requirements**
 - Solana devnet/mainnet
-- CRT token mint: `CRTx1JouZhzSU6XytsE42UQraoGqiHgxabocVfARTy2s`
-- Pyth SOL/USD price feed
 - Jupiter program access
-- Carrot Protocol integration
+- Solana Token Program
 
 ### **Key Resources**
-- [Carrot Documentation](https://docs.deficarrot.com/)
-- [How Carrot Works](https://docs.deficarrot.com/how-carrot-works)
-- [CRT Token Details](https://docs.deficarrot.com/the-token)
-- [Carrot Advantages](https://docs.deficarrot.com/advantages)
+- Mode 1: [Carrot Documentation](https://docs.deficarrot.com/)
+- Mode 2: [Jito Documentation](https://www.jito.network/)
 
 ---
 
@@ -513,34 +552,43 @@ authorize_user(admin, new_user_wallet) // Admin can do this alone
 - **Zero Operational Overhead**: Fully automated distribution system
 - **Institutional Ready**: Multisig security meets enterprise requirements
 
-### **Economic Model Advantages**
+### **Why This Model is Genius**
 
-**Revenue Multiplication**:
+**Traditional Fee Model**:
 ```
-Base Case: $100K monthly volume → $1K fees → $900 platform revenue
-JURSM Enhancement: 
-- LST Yield: +$60/year (6% APY on $1K)
-- Partner Portions: +$30/year (6% APY on unclaimed partner funds)
-- Compound Effect: Yield grows as volume scales
-Total Platform Benefit: Base revenue + Automated yield + Unclaimed yield
+Collect fees → Hold in treasury → Pay out → No extra revenue
 ```
 
-**Risk Mitigation**:
-- **USD Tracking**: Eliminates crypto volatility for revenue planning
-- **LST Diversification**: Spread risk across multiple staking providers
-- **Automated Operations**: No human error in distribution calculations
-- **Cryptographic Security**: Mathematical proof instead of trust systems
+**JURSM Yield Model**:
+```
+Collect fees → Convert to yield tokens → Pay exact amounts → Keep ALL yield
+```
+
+**Compound Benefits**:
+1. **Immediate Yield**: Every fee starts earning from day 1
+2. **No Idle Capital**: 100% of funds working 24/7
+3. **Scalable Profit**: More volume = more yield base
+4. **Time Advantage**: Unclaimed funds keep earning
+5. **Zero Overhead**: Fully automated yield generation
+
+**Real Numbers (1M SOL lifetime fees)**:
+- Traditional: 1M SOL revenue
+- Mode 1 (8% CRT): 1M SOL + 80,000 SOL/year in yield
+- Mode 2 (6% LST): 1M SOL + 60,000 SOL/year in yield
+
+**Platform owners get rich from yield, not just fees!**
 
 ---
 
 ## 🎯 Success Metrics
 
-- ✅ **Zero rent per partner/user** (registry accounts)
-- ✅ **100% yield generation** (immediate SOL→LST conversion)
-- ✅ **Perfect verification** (signature-based proof)
-- ✅ **Stable accounting** (USD tracking eliminates volatility)
-- ✅ **Smart governance** (single owner → multisig evolution)
-- ✅ **Maximum profit** (platform keeps ALL LST yield)
+- ✅ **Maximum Revenue**: Platform keeps 100% of yield differential
+- ✅ **Zero rent overhead**: Shared registry accounts
+- ✅ **Immediate yield**: All fees working from day 1
+- ✅ **Perfect verification**: Cryptographic transaction proofs
+- ✅ **Flexible payouts**: USDC or SOL based on mode
+- ✅ **Smart governance**: Evolves with business growth
+- ✅ **Compound profits**: Yield on yield on yield
 
 ---
 
